@@ -1,35 +1,38 @@
-import fastify from "fastify";
-import { fastifyCors } from "@fastify/cors";
+import { fastifyCors } from '@fastify/cors'
+import { fastifySwagger } from '@fastify/swagger'
+import { fastifySwaggerUi } from '@fastify/swagger-ui'
+import { fastify } from 'fastify'
 import {
-  validatorCompiler,
+  jsonSchemaTransform,
   serializerCompiler,
-} from "fastify-type-provider-zod";
-import { z } from "zod";
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { env } from '../src/routes/env'
+import { subscribeToEventRoute } from './routes/subscribe-to-event-route'
 
-const app = fastify();
+const app = fastify()
 
-app.setSerializerCompiler(serializerCompiler);
-app.setValidatorCompiler(validatorCompiler);
+app.setSerializerCompiler(serializerCompiler)
+app.setValidatorCompiler(validatorCompiler)
 
-app.register(fastifyCors, {
-  origin: "*",
-});
+app.register(fastifyCors)
 
-app.post(
-  "/subscriptions",
-  {
-    schema: {
-      body: z.object({
-        name: z.string(),
-        email: z.string().email(),
-      }),
+app.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: 'NLW Connect',
+      version: '0.1',
     },
   },
-  () => {
-    return "Hello World";
-  }
-);
+  transform: jsonSchemaTransform,
+})
 
-app.listen({ port: 3333 }).then(() => {
-  console.log("Server is running on port 3333");
-});
+app.register(fastifySwaggerUi, {
+  routePrefix: '/docs',
+})
+
+app.register(subscribeToEventRoute)
+
+app.listen({ port: env.PORT }).then(() => {
+  console.log('HTTP server running!')
+})
